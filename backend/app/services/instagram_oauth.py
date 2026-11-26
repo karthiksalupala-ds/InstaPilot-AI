@@ -176,6 +176,45 @@ class MetaInstagramOAuthClient:
                         "account_type": "BUSINESS",
                         "profile_picture_url": ig.get("profile_picture_url"),
                     }
+
+            # Unified Login fallback: inspect granular_scopes target_ids via debug_token
+            debug = await self._request(
+                "GET",
+                f"{FACEBOOK_GRAPH_BASE}/debug_token",
+                params={
+                    "input_token": access_token,
+                    "access_token": f"{settings.meta_app_id}|{settings.meta_app_secret}",
+                },
+            )
+            for scope_entry in debug.get("data", {}).get("granular_scopes", []):
+                for target_id in scope_entry.get("target_ids", []):
+                    try:
+                        ig_obj = await self._request(
+                            "GET",
+                            f"{FACEBOOK_GRAPH_BASE}/{target_id}",
+                            params={
+                                "fields": "id,username,profile_picture_url,instagram_business_account{id,username,profile_picture_url}",
+                                "access_token": access_token,
+                            },
+                        )
+                        if ig_obj.get("instagram_business_account", {}).get("id"):
+                            ig = ig_obj["instagram_business_account"]
+                            return {
+                                "user_id": str(ig["id"]),
+                                "username": str(ig.get("username", ig["id"])),
+                                "account_type": "BUSINESS",
+                                "profile_picture_url": ig.get("profile_picture_url"),
+                            }
+                        if ig_obj.get("username"):
+                            return {
+                                "user_id": str(ig_obj["id"]),
+                                "username": str(ig_obj["username"]),
+                                "account_type": "BUSINESS",
+                                "profile_picture_url": ig_obj.get("profile_picture_url"),
+                            }
+                    except httpx.HTTPError:
+                        continue
+
             raise ValueError("No Instagram Business account linked to this Facebook Page")
 
         return await self._request(
