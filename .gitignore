@@ -1,0 +1,23 @@
+# Environments
+.env
+.env.local
+.env.*.local
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+npm-debug.log*
+
+# Uploads & Local Data
+uploads/
+*.log

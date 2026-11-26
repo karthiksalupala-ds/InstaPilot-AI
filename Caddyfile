@@ -1,0 +1,9 @@
+# Production Caddyfile for automatic Let's Encrypt HTTPS (Meta Webhooks require HTTPS)
+{$DOMAIN:localhost} {
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+    handle {
+        reverse_proxy frontend:3000
+    }
+}
