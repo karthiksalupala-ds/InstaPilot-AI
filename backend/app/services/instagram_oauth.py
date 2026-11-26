@@ -12,6 +12,9 @@ INSTAGRAM_OAUTH_AUTHORIZE_URL = "https://www.instagram.com/oauth/authorize"
 INSTAGRAM_OAUTH_TOKEN_URL = "https://api.instagram.com/oauth/access_token"
 INSTAGRAM_GRAPH_BASE = "https://graph.instagram.com"
 
+FACEBOOK_OAUTH_AUTHORIZE_URL = "https://www.facebook.com/v21.0/dialog/oauth"
+FACEBOOK_GRAPH_BASE = "https://graph.facebook.com/v21.0"
+
 REQUIRED_SCOPES = [
     "instagram_business_basic",
     "instagram_business_manage_messages",
@@ -53,9 +56,20 @@ def verify_oauth_state(state: str) -> tuple[uuid.UUID, uuid.UUID]:
 
 
 def build_authorize_url(workspace_id: uuid.UUID, user_id: uuid.UUID) -> str:
-    """Construct the official Meta Instagram Login authorization URL."""
+    """Construct Meta Unified Login (when META_LOGIN_CONFIG_ID is set) or Instagram Login URL."""
     settings = get_settings()
     state = create_oauth_state(workspace_id, user_id)
+
+    if settings.meta_login_config_id:
+        params = {
+            "client_id": settings.meta_app_id,
+            "config_id": settings.meta_login_config_id,
+            "redirect_uri": settings.meta_redirect_uri,
+            "response_type": "code",
+            "state": state,
+        }
+        return f"{FACEBOOK_OAUTH_AUTHORIZE_URL}?{urlencode(params)}"
+
     params = {
         "enable_fb_login": "0",
         "force_authentication": "1",
@@ -69,7 +83,7 @@ def build_authorize_url(workspace_id: uuid.UUID, user_id: uuid.UUID) -> str:
 
 
 class MetaInstagramOAuthClient:
-    """Async client for Meta Instagram Login OAuth & token lifecycle endpoints."""
+    """Async client for Meta Instagram Login & Unified Login OAuth endpoints."""
 
     def __init__(self, http_client: httpx.AsyncClient | None = None) -> None:
         self._external_client = http_client
@@ -86,6 +100,17 @@ class MetaInstagramOAuthClient:
 
     async def exchange_code_for_short_token(self, code: str) -> dict[str, Any]:
         settings = get_settings()
+        if settings.meta_login_config_id:
+            return await self._request(
+                "GET",
+                f"{FACEBOOK_GRAPH_BASE}/oauth/access_token",
+                params={
+                    "client_id": settings.meta_app_id,
+                    "client_secret": settings.meta_app_secret,
+                    "redirect_uri": settings.meta_redirect_uri,
+                    "code": code,
+                },
+            )
         return await self._request(
             "POST",
             INSTAGRAM_OAUTH_TOKEN_URL,
@@ -100,6 +125,17 @@ class MetaInstagramOAuthClient:
 
     async def exchange_short_for_long_token(self, short_token: str) -> dict[str, Any]:
         settings = get_settings()
+        if settings.meta_login_config_id:
+            return await self._request(
+                "GET",
+                f"{FACEBOOK_GRAPH_BASE}/oauth/access_token",
+                params={
+                    "grant_type": "fb_exchange_token",
+                    "client_id": settings.meta_app_id,
+                    "client_secret": settings.meta_app_secret,
+                    "fb_exchange_token": short_token,
+                },
+            )
         return await self._request(
             "GET",
             f"{INSTAGRAM_GRAPH_BASE}/access_token",
@@ -121,6 +157,27 @@ class MetaInstagramOAuthClient:
         )
 
     async def fetch_profile(self, access_token: str) -> dict[str, Any]:
+        settings = get_settings()
+        if settings.meta_login_config_id:
+            pages = await self._request(
+                "GET",
+                f"{FACEBOOK_GRAPH_BASE}/me/accounts",
+                params={
+                    "fields": "instagram_business_account{id,username,profile_picture_url}",
+                    "access_token": access_token,
+                },
+            )
+            for page in pages.get("data", []):
+                ig = page.get("instagram_business_account")
+                if ig and ig.get("id"):
+                    return {
+                        "user_id": str(ig["id"]),
+                        "username": str(ig.get("username", ig["id"])),
+                        "account_type": "BUSINESS",
+                        "profile_picture_url": ig.get("profile_picture_url"),
+                    }
+            raise ValueError("No Instagram Business account linked to this Facebook Page")
+
         return await self._request(
             "GET",
             f"{INSTAGRAM_GRAPH_BASE}/me",
@@ -131,9 +188,11 @@ class MetaInstagramOAuthClient:
         )
 
     async def subscribe_webhooks(self, ig_user_id: str, access_token: str) -> dict[str, Any]:
+        settings = get_settings()
+        base = FACEBOOK_GRAPH_BASE if settings.meta_login_config_id else INSTAGRAM_GRAPH_BASE
         return await self._request(
             "POST",
-            f"{INSTAGRAM_GRAPH_BASE}/{ig_user_id}/subscribed_apps",
+            f"{base}/{ig_user_id}/subscribed_apps",
             params={
                 "subscribed_fields": ",".join(WEBHOOK_FIELDS),
                 "access_token": access_token,

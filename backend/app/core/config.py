@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     meta_app_id: str = ""
     meta_app_secret: str = ""
     meta_verify_token: str = ""
+    meta_login_config_id: str = ""
     meta_redirect_uri: str = "http://localhost:8000/api/v1/instagram/oauth/callback"
 
     model_config = SettingsConfigDict(

@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.v1.instagram import get_oauth_client
+from app.core.config import get_settings
 from app.core.crypto import decrypt_token, encrypt_token
 from app.core.security import create_access_token, hash_password
 from app.db.session import get_db
@@ -41,7 +42,9 @@ def test_oauth_state_roundtrip() -> None:
     assert parsed_user == user_id
 
 
-async def test_meta_oauth_client_mock_transport() -> None:
+async def test_meta_oauth_client_mock_transport(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("META_LOGIN_CONFIG_ID", "")
+    get_settings.cache_clear()
     def handler(request: httpx.Request) -> httpx.Response:
         url = str(request.url)
         if "oauth/access_token" in url:
