@@ -36,12 +36,6 @@ export default function SettingsPage() {
             {me?.workspaces[0]?.name ?? "Not signed in"}
           </div>
         </div>
-        <div>
-          <label className="text-xs text-zinc-400">LLM Key Source</label>
-          <div className="mt-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-300">
-            Global Backend <code>.env</code> (GEMINI_API_KEY / GROQ_API_KEY)
-          </div>
-        </div>
         <button
           type="button"
           onClick={signOut}
