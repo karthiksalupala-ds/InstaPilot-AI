@@ -1,10 +1,41 @@
-from collections.abc import Awaitable, Callable
+import asyncio
+import logging
+from collections.abc import AsyncGenerator, Awaitable, Callable
+from contextlib import asynccontextmanager
 
+from arq.worker import create_worker
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import api_router
 from app.core.config import get_settings
+from app.worker import WorkerSettings
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Optionally run the ARQ background worker inside the API process ($0 single-instance mode)."""
+    settings = get_settings()
+    worker = None
+    worker_task: asyncio.Task[None] | None = None
+
+    if settings.enable_embedded_worker:
+        try:
+            worker = create_worker(WorkerSettings)  # type: ignore[arg-type]
+            worker_task = asyncio.create_task(worker.async_run())
+            logger.info("Embedded ARQ worker started")
+        except (OSError, RuntimeError) as exc:
+            logger.warning("Failed to start embedded ARQ worker: %s", exc)
+
+    try:
+        yield
+    finally:
+        if worker is not None:
+            await worker.close()
+        if worker_task is not None:
+            worker_task.cancel()
 
 
 def create_app() -> FastAPI:
@@ -14,6 +45,7 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version="0.1.0",
         openapi_url=f"{settings.api_v1_prefix}/openapi.json",
+        lifespan=lifespan,
     )
 
     app.add_middleware(

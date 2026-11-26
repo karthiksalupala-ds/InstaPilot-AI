@@ -77,3 +77,9 @@ class ConversationUpdateRequest(BaseModel):
     is_ai_paused: bool | None = None
     automation_mode_override: AutomationOverride | None = None
     assigned_user_id: uuid.UUID | None = None
+
+
+class SimulateCustomerDMRequest(BaseModel):
+    instagram_account_id: uuid.UUID
+    customer_username: str = Field(default="demo_customer", min_length=2, max_length=64)
+    message: str = Field(min_length=1, max_length=1000)

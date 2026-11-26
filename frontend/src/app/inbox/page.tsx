@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import { getStoredAuth } from "@/lib/auth";
 
+interface IgAccount {
+  id: string;
+  ig_username: string;
+}
+
 interface ConvItem {
   id: string;
   ig_username: string;
@@ -34,6 +39,11 @@ interface ConvDetail {
 }
 
 export default function InboxPage() {
+  const [accounts, setAccounts] = useState<IgAccount[]>([]);
+  const [simAccountId, setSimAccountId] = useState("");
+  const [simMsg, setSimMsg] = useState("");
+  const [simLoading, setSimLoading] = useState(false);
+
   const [conversations, setConversations] = useState<ConvItem[]>([]);
   const [active, setActive] = useState<ConvDetail | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -57,8 +67,16 @@ export default function InboxPage() {
   }
 
   useEffect(() => {
-    void loadList().catch(() => undefined);
     const auth = getStoredAuth();
+    if (auth) {
+      apiFetch<IgAccount[]>("/instagram/accounts", auth)
+        .then((accs) => {
+          setAccounts(accs);
+          if (accs.length > 0) setSimAccountId(accs[0].id);
+        })
+        .catch(() => undefined);
+    }
+    void loadList().catch(() => undefined);
     if (!auth) return;
 
     const controller = new AbortController();
@@ -89,6 +107,32 @@ export default function InboxPage() {
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function simulateIncomingDM(e: React.FormEvent) {
+    e.preventDefault();
+    const auth = getStoredAuth();
+    if (!auth || !simAccountId || !simMsg.trim()) return;
+    setError(null);
+    setSimLoading(true);
+    try {
+      const res = await apiFetch<{ conversation_id: string }>("/inbox/simulate", {
+        ...auth,
+        method: "POST",
+        body: JSON.stringify({
+          instagram_account_id: simAccountId,
+          customer_username: "demo_customer",
+          message: simMsg,
+        }),
+      });
+      setSimMsg("");
+      await loadList();
+      await loadThread(res.conversation_id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Simulation failed");
+    } finally {
+      setSimLoading(false);
+    }
+  }
 
   async function sendManual() {
     const auth = getStoredAuth();
@@ -138,6 +182,41 @@ export default function InboxPage() {
         </p>
       </div>
 
+      <form
+        onSubmit={simulateIncomingDM}
+        className="flex flex-wrap items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3"
+      >
+        <select
+          value={simAccountId}
+          onChange={(e) => setSimAccountId(e.target.value)}
+          className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs"
+        >
+          {accounts.length === 0 ? (
+            <option value="">No IG account</option>
+          ) : (
+            accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                @{a.ig_username}
+              </option>
+            ))
+          )}
+        </select>
+        <input
+          type="text"
+          value={simMsg}
+          onChange={(e) => setSimMsg(e.target.value)}
+          placeholder="Test live agent: type a customer DM (e.g. 'Hi, price please?')..."
+          className="flex-1 min-w-52 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm"
+        />
+        <button
+          type="submit"
+          disabled={simLoading || !simAccountId}
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+        >
+          {simLoading ? "Agent running..." : "Simulate Customer DM"}
+        </button>
+      </form>
+
       {error && (
         <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
           {error}
@@ -147,7 +226,9 @@ export default function InboxPage() {
       <div className="grid gap-4 lg:grid-cols-12">
         <div className="lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 space-y-2">
           {conversations.length === 0 ? (
-            <div className="p-3 text-xs text-zinc-400">No conversations yet.</div>
+            <div className="p-3 text-xs text-zinc-400">
+              No conversations yet. Try &ldquo;Simulate Customer DM&rdquo; above!
+            </div>
           ) : (
             conversations.map((c) => (
               <button
@@ -200,7 +281,9 @@ export default function InboxPage() {
                           : "bg-zinc-950"
                       }`}
                     >
-                      <div className="text-[11px] text-zinc-400 mb-1">{m.sender_type}</div>
+                      <div className="text-[11px] text-zinc-400 mb-1">
+                        {m.sender_type} ({m.delivery_status})
+                      </div>
                       <div>{m.content}</div>
                       {m.delivery_status === "pending_approval" && (
                         <button
@@ -241,7 +324,7 @@ export default function InboxPage() {
           <div className="text-xs text-zinc-400">
             Intent: <span className="text-zinc-200">{active?.last_intent ?? "—"}</span>
           </div>
-          <p className="text-xs text-zinc-300">{active?.ai_summary ?? "No AI summary yet."}</p>
+          <p className="text-xs text-zinc-300 whitespace-pre-wrap">{active?.ai_summary ?? "No AI summary yet."}</p>
         </div>
       </div>
     </div>

@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     app_name: str = "InstaPilot AI"
     api_v1_prefix: str = "/api/v1"
     cors_origins: str = "http://localhost:3000"
+    enable_embedded_worker: bool = False
 
     jwt_secret_key: str = "change-me-in-production-min-32-chars"
     token_encryption_key: str = "change-me-fernet-or-32-byte-base64-key"

@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import require_workspace_role
 from app.core.crypto import decrypt_token
 from app.db.session import get_db
-from app.models.instagram import InstagramAccount, OAuthToken
+from app.models.instagram import Agent, InstagramAccount, OAuthToken
 from app.models.messaging import Conversation, Customer, Message
 from app.models.tenant import WorkspaceMember
 from app.schemas.inbox import (
@@ -21,7 +21,9 @@ from app.schemas.inbox import (
     ManualReplyRequest,
     MessageResponse,
     RejectDraftRequest,
+    SimulateCustomerDMRequest,
 )
+from app.services.agent_graph import run_agent_graph
 from app.services.instagram_messaging import MetaInstagramMessagingClient
 
 router = APIRouter(prefix="/inbox", tags=["inbox"])
@@ -334,4 +336,97 @@ async def update_conversation(
         "is_ai_paused": conv.is_ai_paused,
         "automation_mode_override": conv.automation_mode_override,
         "assigned_user_id": str(conv.assigned_user_id) if conv.assigned_user_id else None,
+    }
+
+
+@router.post("/simulate")
+async def simulate_customer_dm(
+    payload: SimulateCustomerDMRequest,
+    caller: WorkspaceMember = Depends(require_workspace_role("owner", "admin", "operator")),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, object]:
+    """Simulate an incoming customer DM and run the live LangGraph agent into Unified Inbox."""
+    row = (
+        await db.execute(
+            select(InstagramAccount, Agent)
+            .join(Agent, Agent.instagram_account_id == InstagramAccount.id)
+            .where(
+                InstagramAccount.id == payload.instagram_account_id,
+                InstagramAccount.workspace_id == caller.workspace_id,
+            )
+        )
+    ).first()
+    if row is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Account or agent not found")
+
+    account, agent = row
+    now = datetime.now(UTC)
+    igsid = f"sim_{payload.customer_username.lstrip('@').lower()}"
+
+    customer = await db.scalar(
+        select(Customer).where(
+            Customer.instagram_account_id == account.id,
+            Customer.ig_scoped_user_id == igsid,
+        )
+    )
+    if customer is None:
+        customer = Customer(
+            workspace_id=caller.workspace_id,
+            instagram_account_id=account.id,
+            ig_scoped_user_id=igsid,
+            ig_username=payload.customer_username.lstrip("@"),
+        )
+        db.add(customer)
+        await db.flush()
+
+    conv = await db.scalar(
+        select(Conversation).where(
+            Conversation.instagram_account_id == account.id,
+            Conversation.customer_id == customer.id,
+            Conversation.channel == "dm",
+        )
+    )
+    if conv is None:
+        conv = Conversation(
+            workspace_id=caller.workspace_id,
+            instagram_account_id=account.id,
+            customer_id=customer.id,
+            channel="dm",
+            status="open",
+            window_expires_at=now + timedelta(hours=24),
+            unread_count=1,
+            last_message_at=now,
+        )
+        db.add(conv)
+        await db.flush()
+    else:
+        conv.window_expires_at = now + timedelta(hours=24)
+        conv.last_message_at = now
+
+    msg = Message(
+        workspace_id=caller.workspace_id,
+        instagram_account_id=account.id,
+        conversation_id=conv.id,
+        sender_type="customer",
+        message_type="text",
+        content=payload.message,
+        delivery_status="received",
+        metadata_json={"simulated": True},
+    )
+    db.add(msg)
+    await db.commit()
+    await db.refresh(msg)
+
+    agent_result = await run_agent_graph(
+        db=db,
+        account=account,
+        agent=agent,
+        customer_message=msg.content,
+        conversation=conv,
+        trigger_message=msg,
+        is_sandbox=False,
+    )
+    return {
+        "conversation_id": str(conv.id),
+        "agent_result": agent_result,
     }
