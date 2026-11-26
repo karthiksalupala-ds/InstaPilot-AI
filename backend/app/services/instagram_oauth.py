@@ -66,6 +66,7 @@ def build_authorize_url(workspace_id: uuid.UUID, user_id: uuid.UUID) -> str:
             "config_id": settings.meta_login_config_id,
             "redirect_uri": settings.meta_redirect_uri,
             "response_type": "code",
+            "auth_type": "rerequest",
             "state": state,
         }
         return f"{FACEBOOK_OAUTH_AUTHORIZE_URL}?{urlencode(params)}"
