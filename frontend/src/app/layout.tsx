@@ -5,6 +5,10 @@ import { AppShell } from "@/components/AppShell";
 export const metadata: Metadata = {
   title: "InstaPilot AI — Multi-Account Instagram AI Agent",
   description: "Centralized multi-account Instagram AI Agent platform",
+  icons: {
+    icon: "/logo.jpg",
+    apple: "/logo.jpg",
+  },
 };
 
 export default function RootLayout({
