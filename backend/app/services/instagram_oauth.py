@@ -215,7 +215,16 @@ class MetaInstagramOAuthClient:
                     except httpx.HTTPError:
                         continue
 
-            raise ValueError("No Instagram Business account linked to this Facebook Page")
+            scopes_summary = [
+                {
+                    "scope": s.get("scope"),
+                    "targets": s.get("target_ids", []),
+                }
+                for s in debug.get("data", {}).get("granular_scopes", [])
+            ]
+            raise ValueError(
+                f"No Instagram Business account found. pages={len(pages.get('data', []))}, scopes={scopes_summary}"
+            )
 
         return await self._request(
             "GET",
