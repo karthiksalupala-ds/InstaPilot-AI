@@ -160,6 +160,28 @@ class MetaInstagramOAuthClient:
     async def fetch_profile(self, access_token: str) -> dict[str, Any]:
         settings = get_settings()
         if settings.meta_login_config_id:
+            # 1. Official Unified Login endpoint for Business Integration System User tokens
+            try:
+                assigned = await self._request(
+                    "GET",
+                    f"{FACEBOOK_GRAPH_BASE}/me/assigned_instagram_accounts",
+                    params={
+                        "fields": "id,username,profile_picture_url",
+                        "access_token": access_token,
+                    },
+                )
+                for ig in assigned.get("data", []):
+                    if ig.get("id"):
+                        return {
+                            "user_id": str(ig["id"]),
+                            "username": str(ig.get("username", ig["id"])),
+                            "account_type": "BUSINESS",
+                            "profile_picture_url": ig.get("profile_picture_url"),
+                        }
+            except httpx.HTTPError:
+                pass
+
+            # 2. Facebook Page-linked Instagram Business Account fallback
             pages = await self._request(
                 "GET",
                 f"{FACEBOOK_GRAPH_BASE}/me/accounts",
