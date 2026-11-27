@@ -24,7 +24,7 @@ from app.schemas.inbox import (
     SimulateCustomerDMRequest,
 )
 from app.services.agent_graph import run_agent_graph
-from app.services.instagram_messaging import MetaInstagramMessagingClient
+from app.services.instagram_messaging import MetaAPIError, MetaInstagramMessagingClient
 
 router = APIRouter(prefix="/inbox", tags=["inbox"])
 
@@ -175,6 +175,9 @@ async def _dispatch_to_instagram(
             detail="Meta 24-hour messaging window has expired for this conversation",
         )
 
+    if cust.ig_scoped_user_id.startswith("sim_"):
+        return conv, account
+
     access_token = decrypt_token(token_row.encrypted_access_token)
     try:
         await messaging_client.send_dm(
@@ -183,10 +186,11 @@ async def _dispatch_to_instagram(
             text=text,
             access_token=access_token,
         )
-    except httpx.HTTPError as exc:
+    except (MetaAPIError, httpx.HTTPError) as exc:
+        detail = str(exc) if isinstance(exc, MetaAPIError) else "Meta Send API request failed"
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Meta Send API error: {exc}",
+            detail=detail,
         ) from exc
 
     return conv, account
