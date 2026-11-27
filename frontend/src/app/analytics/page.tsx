@@ -34,19 +34,19 @@ export default function AnalyticsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Analytics</h1>
-        <p className="text-sm text-zinc-400">
-          Performance, conversion, and LLM usage metrics across accounts.
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Analytics</h1>
+        <p className="text-sm text-zinc-500">
+          Performance, conversion, and AI usage metrics across accounts.
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((m) => (
-          <div key={m.label} className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5">
-            <div className="text-xs uppercase text-zinc-400">{m.label}</div>
-            <div className="mt-2 text-3xl font-semibold">{m.value}</div>
+          <div key={m.label} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-xs">
+            <div className="text-xs font-medium uppercase text-zinc-500">{m.label}</div>
+            <div className="mt-2 text-3xl font-bold text-zinc-950">{m.value}</div>
           </div>
         ))}
       </div>

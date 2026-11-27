@@ -41,18 +41,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto mt-12 max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/80 p-6 space-y-5">
+    <div className="mx-auto mt-12 max-w-md rounded-3xl border border-zinc-200 bg-white p-7 shadow-sm space-y-5">
       <div>
-        <h1 className="text-xl font-semibold">
+        <h1 className="text-xl font-bold text-zinc-950">
           {mode === "login" ? "Sign in to InstaPilot AI" : "Initialize Owner Account"}
         </h1>
-        <p className="mt-1 text-xs text-zinc-400">
+        <p className="mt-1 text-xs text-zinc-500">
           Private mode: public sign-ups are disabled once initialized.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
           {error}
         </div>
       )}
@@ -60,44 +60,44 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-4">
         {mode === "bootstrap" && (
           <div>
-            <label className="text-xs text-zinc-400">Full Name</label>
+            <label className="text-xs font-medium text-zinc-600">Full Name</label>
             <input
               type="text"
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 focus:border-zinc-950 focus:outline-none"
             />
           </div>
         )}
 
         <div>
-          <label className="text-xs text-zinc-400">Email</label>
+          <label className="text-xs font-medium text-zinc-600">Email</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 focus:border-zinc-950 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="text-xs text-zinc-400">Password (min 8 chars)</label>
+          <label className="text-xs font-medium text-zinc-600">Password (min 8 chars)</label>
           <input
             type="password"
             required
             minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950 focus:border-zinc-950 focus:outline-none"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+          className="w-full rounded-full bg-[#c8ff00] py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-[#b8f000] disabled:opacity-50"
         >
           {loading ? "Please wait..." : mode === "login" ? "Sign In" : "Create Owner & Workspace"}
         </button>
@@ -106,7 +106,7 @@ export default function LoginPage() {
       <button
         type="button"
         onClick={() => setMode(mode === "login" ? "bootstrap" : "login")}
-        className="w-full text-center text-xs text-zinc-400 hover:text-zinc-200"
+        className="w-full text-center text-xs font-medium text-zinc-500 hover:text-zinc-950"
       >
         {mode === "login"
           ? "First time setup? Initialize owner account"

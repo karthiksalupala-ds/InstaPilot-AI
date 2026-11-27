@@ -1,11 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  background-color: #09090b;
-  color: #f4f4f5;
+  background-color: #f8f9fb;
+  color: #09090b;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+.bg-dot-grid {
+  background-color: #f8f9fb;
+  background-image: radial-gradient(#d4d4d8 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-float-slow {
+  animation: floatSlow 4s ease-in-out infinite;
 }

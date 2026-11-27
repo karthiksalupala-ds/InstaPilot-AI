@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import { clearAuthSession, getStoredAuth, UserMe } from "@/lib/auth";
-import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -23,23 +23,23 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Workspace Settings</h1>
-        <p className="text-sm text-zinc-400">
-          Manage workspace identity, LLM defaults, and session status.
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Workspace Settings</h1>
+        <p className="text-sm text-zinc-500">
+          Manage your workspace identity and active session.
         </p>
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 p-5 space-y-4">
+      <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-xs space-y-4">
         <div>
-          <label className="text-xs text-zinc-400">Active Workspace</label>
-          <div className="mt-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-200">
+          <label className="text-xs font-medium text-zinc-500">Active Workspace</label>
+          <div className="mt-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium text-zinc-900">
             {me?.workspaces[0]?.name ?? "Not signed in"}
           </div>
         </div>
         <button
           type="button"
           onClick={signOut}
-          className="rounded-lg border border-rose-500/40 px-4 py-2 text-sm font-medium text-rose-300 hover:bg-rose-500/10"
+          className="rounded-full border border-rose-200 bg-rose-50 px-5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100"
         >
           Sign Out
         </button>

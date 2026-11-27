@@ -174,22 +174,22 @@ export default function InboxPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-6xl">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Unified Inbox</h1>
-        <p className="text-sm text-zinc-400">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Unified Inbox</h1>
+        <p className="text-sm text-zinc-500">
           Centralized DMs & comment threads with AI summaries, approvals, and human handoff.
         </p>
       </div>
 
       <form
         onSubmit={simulateIncomingDM}
-        className="flex flex-wrap items-center gap-2 rounded-xl border border-indigo-500/30 bg-indigo-500/5 p-3"
+        className="flex flex-wrap items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-3 shadow-xs"
       >
         <select
           value={simAccountId}
           onChange={(e) => setSimAccountId(e.target.value)}
-          className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs"
+          className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-800"
         >
           {accounts.length === 0 ? (
             <option value="">No IG account</option>
@@ -206,27 +206,27 @@ export default function InboxPage() {
           value={simMsg}
           onChange={(e) => setSimMsg(e.target.value)}
           placeholder="Test live agent: type a customer DM (e.g. 'Hi, price please?')..."
-          className="flex-1 min-w-52 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm"
+          className="flex-1 min-w-52 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-950"
         />
         <button
           type="submit"
           disabled={simLoading || !simAccountId}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white hover:bg-indigo-500 disabled:opacity-50"
+          className="rounded-full bg-[#c8ff00] px-5 py-2 text-xs font-bold text-zinc-950 transition hover:bg-[#b8f000] disabled:opacity-50"
         >
           {simLoading ? "Agent running..." : "Simulate Customer DM"}
         </button>
       </form>
 
       {error && (
-        <div className="rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
           {error}
         </div>
       )}
 
       <div className="grid gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-4 rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 space-y-2">
+        <div className="lg:col-span-4 rounded-2xl border border-zinc-200 bg-white p-3 shadow-xs space-y-2">
           {conversations.length === 0 ? (
-            <div className="p-3 text-xs text-zinc-400">
+            <div className="p-3 text-xs text-zinc-500">
               No conversations yet. Try &ldquo;Simulate Customer DM&rdquo; above!
             </div>
           ) : (
@@ -235,37 +235,45 @@ export default function InboxPage() {
                 key={c.id}
                 type="button"
                 onClick={() => loadThread(c.id)}
-                className="w-full text-left rounded-lg border border-zinc-800 bg-zinc-950/70 p-3 hover:border-indigo-500/40"
+                className={`w-full text-left rounded-xl border p-3 transition ${
+                  active?.id === c.id
+                    ? "border-zinc-950 bg-zinc-50"
+                    : "border-zinc-200/80 bg-white hover:bg-zinc-50"
+                }`}
               >
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-zinc-200">
+                  <span className="font-bold text-zinc-950">
                     {c.customer_username ? `@${c.customer_username}` : c.customer_ig_id}
                   </span>
-                  <span className="text-zinc-400">{c.status}</span>
+                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-600">
+                    {c.status}
+                  </span>
                 </div>
-                <div className="text-[11px] text-indigo-300">@{c.ig_username} • {c.channel}</div>
+                <div className="text-[11px] font-medium text-zinc-500 mt-0.5">
+                  @{c.ig_username} • {c.channel}
+                </div>
               </button>
             ))
           )}
         </div>
 
-        <div className="lg:col-span-5 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-5 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs flex flex-col justify-between space-y-4">
           {!active ? (
-            <div className="text-sm text-zinc-400">Select a conversation to view messages.</div>
+            <div className="text-sm text-zinc-500">Select a conversation to view messages.</div>
           ) : (
             <>
               <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+                <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                   <div>
-                    <div className="text-sm font-semibold">
+                    <div className="text-sm font-bold text-zinc-950">
                       {active.customer.ig_username ? `@${active.customer.ig_username}` : active.customer.ig_scoped_user_id}
                     </div>
-                    <div className="text-xs text-zinc-400">@{active.ig_username}</div>
+                    <div className="text-xs text-zinc-500">@{active.ig_username}</div>
                   </div>
                   <button
                     type="button"
                     onClick={togglePause}
-                    className="rounded-lg border border-zinc-700 px-2.5 py-1 text-xs hover:bg-zinc-800"
+                    className="rounded-full border border-zinc-200 px-3 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
                   >
                     {active.is_ai_paused ? "Resume AI" : "Pause AI"}
                   </button>
@@ -275,21 +283,23 @@ export default function InboxPage() {
                   {active.messages.map((m) => (
                     <div
                       key={m.id}
-                      className={`rounded-lg p-3 text-sm ${
+                      className={`rounded-2xl p-3 text-sm ${
                         m.delivery_status === "pending_approval"
-                          ? "border border-indigo-500/30 bg-indigo-500/10"
-                          : "bg-zinc-950"
+                          ? "border border-lime-400 bg-[#c8ff00]/15"
+                          : m.sender_type === "customer"
+                            ? "bg-zinc-100 text-zinc-900"
+                            : "bg-zinc-950 text-white"
                       }`}
                     >
-                      <div className="text-[11px] text-zinc-400 mb-1">
-                        {m.sender_type} ({m.delivery_status})
+                      <div className="text-[10px] opacity-60 mb-1 uppercase font-semibold">
+                        {m.sender_type} • {m.delivery_status}
                       </div>
                       <div>{m.content}</div>
                       {m.delivery_status === "pending_approval" && (
                         <button
                           type="button"
                           onClick={() => approveDraft(m.id)}
-                          className="mt-2 rounded bg-indigo-600 px-3 py-1 text-xs font-medium text-white hover:bg-indigo-500"
+                          className="mt-2 rounded-full bg-[#c8ff00] px-3.5 py-1 text-xs font-bold text-zinc-950 hover:bg-[#b8f000]"
                         >
                           Approve & Send
                         </button>
@@ -299,18 +309,18 @@ export default function InboxPage() {
                 </div>
               </div>
 
-              <div className="flex gap-2 border-t border-zinc-800 pt-3">
+              <div className="flex gap-2 border-t border-zinc-100 pt-3">
                 <input
                   type="text"
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder="Write a manual reply..."
-                  className="flex-1 rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm"
+                  className="flex-1 rounded-full border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm"
                 />
                 <button
                   type="button"
                   onClick={sendManual}
-                  className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-900"
+                  className="rounded-full bg-zinc-950 px-5 py-2 text-xs font-semibold text-white hover:bg-zinc-800"
                 >
                   Send
                 </button>
@@ -319,12 +329,14 @@ export default function InboxPage() {
           )}
         </div>
 
-        <div className="lg:col-span-3 rounded-xl border border-zinc-800 bg-zinc-900/70 p-4 space-y-3">
-          <h2 className="text-sm font-semibold">Customer & AI Summary</h2>
-          <div className="text-xs text-zinc-400">
-            Intent: <span className="text-zinc-200">{active?.last_intent ?? "—"}</span>
+        <div className="lg:col-span-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xs space-y-3">
+          <h2 className="text-sm font-bold text-zinc-950">Customer & AI Summary</h2>
+          <div className="text-xs text-zinc-500">
+            Intent: <span className="font-semibold text-zinc-900">{active?.last_intent ?? "—"}</span>
           </div>
-          <p className="text-xs text-zinc-300 whitespace-pre-wrap">{active?.ai_summary ?? "No AI summary yet."}</p>
+          <p className="text-xs text-zinc-600 whitespace-pre-wrap leading-relaxed">
+            {active?.ai_summary ?? "No AI summary yet."}
+          </p>
         </div>
       </div>
     </div>

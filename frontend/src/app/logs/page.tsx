@@ -25,17 +25,17 @@ export default function LogsPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-6xl">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Activity & Execution Logs</h1>
-        <p className="text-sm text-zinc-400">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-950">Activity & Execution Logs</h1>
+        <p className="text-sm text-zinc-500">
           Full audit trail of LangGraph runs, tool calls, and delivery status.
         </p>
       </div>
 
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/70 overflow-hidden">
+      <div className="rounded-2xl border border-zinc-200 bg-white shadow-xs overflow-hidden">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-800 bg-zinc-950/60 text-xs uppercase text-zinc-400">
+          <thead className="border-b border-zinc-100 bg-zinc-50 text-xs uppercase text-zinc-500">
             <tr>
               <th className="px-4 py-3">Time</th>
               <th className="px-4 py-3">Intent</th>
@@ -44,23 +44,23 @@ export default function LogsPage() {
               <th className="px-4 py-3">Latency</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-800/80">
+          <tbody className="divide-y divide-zinc-100">
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-4 text-xs text-zinc-400">
+                <td colSpan={5} className="px-4 py-4 text-xs text-zinc-500">
                   No agent executions logged yet.
                 </td>
               </tr>
             ) : (
               logs.map((log) => (
                 <tr key={log.id}>
-                  <td className="px-4 py-3 text-zinc-400">{new Date(log.created_at).toLocaleString()}</td>
-                  <td className="px-4 py-3">{log.intent ?? "—"}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-indigo-300">
+                  <td className="px-4 py-3 text-xs text-zinc-500">{new Date(log.created_at).toLocaleString()}</td>
+                  <td className="px-4 py-3 font-medium text-zinc-900">{log.intent ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-indigo-600">
                     {log.tools_called.map((t) => t.name).join(", ") || "none"}
                   </td>
-                  <td className="px-4 py-3 text-xs uppercase">{log.final_action}</td>
-                  <td className="px-4 py-3 text-zinc-400">{log.latency_ms}ms</td>
+                  <td className="px-4 py-3 text-xs font-semibold uppercase text-zinc-700">{log.final_action}</td>
+                  <td className="px-4 py-3 text-xs text-zinc-500">{log.latency_ms}ms</td>
                 </tr>
               ))
             )}
